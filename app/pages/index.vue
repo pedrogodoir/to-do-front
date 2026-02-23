@@ -1,8 +1,218 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { z } from 'zod'
+import { toTypedSchema } from '@vee-validate/zod'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-vue-next'
+
+const mode = ref<'login' | 'signup'>('login')
+const step = ref(0)
+const showPassword = ref(false)
+const confirmShowPassword = ref(false)
+
+// Dados persistidos dos formulários
+const step0Data = ref({ username: '', email: '' })
+const loginData = ref({ email: '', password: '' })
+
+const loginSchema = toTypedSchema(
+  z.object({
+    email: z.string().email('Invalid email'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+  })
+)
+
+const signupStep0Schema = toTypedSchema(
+  z.object({
+    username: z.string().min(1, 'Username is required'),
+    email: z.string().email('Invalid email'),
+  })
+)
+
+const signupStep1Schema = toTypedSchema(
+  z.object({
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string().min(6, 'Confirm password is required'),
+    terms: z.boolean().refine(val => val === true, {
+      message: 'You must accept the terms of use',
+    }),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
+)
+
+const onLoginSubmit = (values: any) => {
+  loginData.value = values
+  console.log('Login:', values)
+  // login logic here
+}
+
+const onStep0Submit = (values: any) => {
+  step0Data.value = values
+  step.value = 1
+}
+
+const onStep1Submit = (values: any) => {
+  console.log('Signup:', { ...step0Data.value, ...values })
+  // registration logic here
+}
+
+const handleBack = () => {
+  step.value = 0
+}
+</script>
+
 <template>
-  <div class="h-screen flex flex-col items-center justify-center">
-    <h1 class="title">Welcome to Nuxt 3!</h1>
-    <p class="description">
-      Get started by editing <code>app/pages/index.vue</code>
-    </p>
+  <div class="flex flex-col justify-center min-h-screen bg-slate-900 lg:bg-left gap-8">
+    <div class="flex flex-col space-y-2 p-6 h-screen items-center w-140 bg-slate-950 text-white justify-center">
+      <h1 class="self-center text-xl font-semibold mb-8">
+        {{ mode === "login" ? "Login" : "Register" }}
+      </h1>
+
+      <Form v-if="mode === 'login'" :validation-schema="loginSchema" :initial-values="loginData" @submit="onLoginSubmit" class="w-full space-y-4">
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" type="email" placeholder="johndoe@gmail.com" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl>
+              <div class="relative">
+                <Input
+                  v-bind="componentField"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="•••••••••"
+                />
+                <button type="button" class="absolute right-2 top-1.5" @click="showPassword = !showPassword">
+                  <Eye v-if="showPassword" class="w-5 h-5" />
+                  <EyeOff v-else class="w-5 h-5" />
+                </button>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <div class="flex flex-row gap-2 justify-between items-center">
+          <p class="text-sm text-center">
+            Don't have an account?
+            <button type="button" @click="() => { mode = 'signup'; step = 0 }" class="font-semibold text-rose-400 cursor-pointer underline underline-offset-4">
+              Sign Up
+            </button>
+          </p>
+          <Button type="submit" class="border-2 border-rose-400 text-white bg-transparent hover:bg-rose-400 cursor-pointer">
+            Sign In
+          </Button>
+        </div>
+      </Form>
+
+      <Form v-else-if="step === 0" :validation-schema="signupStep0Schema" :initial-values="step0Data" @submit="onStep0Submit" class="w-full space-y-4">
+        <FormField v-slot="{ componentField }" name="username">
+          <FormItem>
+            <FormLabel>Full Name</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" placeholder="John Doe" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" type="email" placeholder="johndoe@gmail.com" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <div class="flex justify-between items-center gap-2">
+          <p class="text-sm text-center">
+            Already have an account?
+            <button type="button" @click="mode = 'login'" class="font-semibold text-rose-400 cursor-pointer underline underline-offset-4">
+              Sign In
+            </button>
+          </p>
+          <Button type="submit" class="border-2 border-rose-400 text-white bg-transparent hover:bg-rose-400 cursor-pointer">
+            Next
+            <ArrowRight class="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </Form>
+
+      <Form v-else :validation-schema="signupStep1Schema" @submit="onStep1Submit" class="w-full space-y-4">
+        <FormField v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl>
+              <div class="relative">
+                <Input v-bind="componentField" :type="showPassword ? 'text' : 'password'" placeholder="•••••••••" />
+                <button type="button" class="absolute right-2 top-1.5" @click="showPassword = !showPassword">
+                  <Eye v-if="showPassword" class="w-5 h-5" />
+                  <EyeOff v-else class="w-5 h-5" />
+                </button>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ componentField }" name="confirmPassword">
+          <FormItem>
+            <FormLabel>Confirm Your Password</FormLabel>
+            <FormControl>
+              <div class="relative">
+                <Input v-bind="componentField" :type="confirmShowPassword ? 'text' : 'password'" placeholder="•••••••••" />
+                <button type="button" class="absolute right-2 top-1.5" @click="confirmShowPassword = !confirmShowPassword">
+                  <Eye v-if="confirmShowPassword" class="w-5 h-5" />
+                  <EyeOff v-else class="w-5 h-5" />
+                </button>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ componentField }" name="terms" type="checkbox">
+          <FormItem class="flex flex-row items-center gap-2">
+            <FormControl>
+              <Checkbox v-bind="componentField" class="cursor-pointer" />
+            </FormControl>
+            <FormLabel class="text-sm font-normal cursor-pointer">
+              I accept the terms of use
+            </FormLabel>
+          </FormItem>
+        </FormField>
+
+        <div class="flex gap-2 justify-between">
+          <Button type="button" @click="handleBack" class="border-2 border-rose-400 text-white bg-transparent hover:bg-rose-400 cursor-pointer">
+            <ArrowLeft class="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <Button type="submit" class="border-2 border-rose-400 text-white bg-transparent hover:bg-rose-400 cursor-pointer">
+            Register
+          </Button>
+        </div>
+      </Form>
+
+    </div>
   </div>
 </template>
