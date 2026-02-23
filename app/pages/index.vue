@@ -14,8 +14,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-vue-next'
+import { useApi } from '~/composables/useApi'
 
+const { setToken } = useAuth()
 const mode = ref<'login' | 'signup'>('login')
+const loginError = ref('')
+const registerError = ref<Record<string, string>>({})
 const step = ref(0)
 const showPassword = ref(false)
 const confirmShowPassword = ref(false)
@@ -51,10 +55,29 @@ const signupStep1Schema = toTypedSchema(
   })
 )
 
-const onLoginSubmit = (values: any) => {
+const api = useApi()
+
+const onLoginSubmit = async (values: any) => {
+  loginError.value = ''
   loginData.value = values
-  console.log('Login:', values)
-  // login logic here
+  const payload = {
+    email: values.email,
+    hash_pass: values.password,
+  }
+  try {
+    const response = await api.post('/login', payload) as any
+    setToken(response.token)
+    navigateTo('/dashboard')
+  } catch (error: any) {
+    const data = error?.response?._data
+    console.log('Erro Laravel:', JSON.stringify(data, null, 2))
+    if (error?.response?.status === 422) {
+      const errors = data?.errors
+      loginError.value = errors ? Object.values(errors).flat().join(' ') : (data?.message || 'Invalid credentials')
+    } else {
+      loginError.value = 'An error occurred. Please try again.'
+    }
+  }
 }
 
 const onStep0Submit = (values: any) => {
@@ -62,9 +85,31 @@ const onStep0Submit = (values: any) => {
   step.value = 1
 }
 
-const onStep1Submit = (values: any) => {
-  console.log('Signup:', { ...step0Data.value, ...values })
-  // registration logic here
+const onStep1Submit = async (values: any) => {
+  registerError.value = {}
+  const { terms, confirmPassword, password } = values
+  const payload = {
+    name: step0Data.value.username,
+    email: step0Data.value.email,
+    hash_pass: password,
+    password_confirmation: confirmPassword,
+  }
+  console.log('Payload enviado:', payload)
+  try {
+    const response = await api.post('/register', payload) as any
+    console.log('Registered:', response)
+    // redirecionar: navigateTo('/dashboard')
+  } catch (error: any) {
+    const data = error?.response?._data
+    console.log('Erro Laravel:', JSON.stringify(data, null, 2))
+    if (error?.response?.status === 422 && data?.errors) {
+      registerError.value = Object.fromEntries(
+        Object.entries(data.errors).map(([key, val]: any) => [key, val[0]])
+      )
+    } else {
+      registerError.value = { general: data?.message || 'An error occurred. Please try again.' }
+    }
+  }
 }
 
 const handleBack = () => {
@@ -109,6 +154,8 @@ const handleBack = () => {
             <FormMessage />
           </FormItem>
         </FormField>
+
+        <p v-if="loginError" class="text-sm text-rose-400">{{ loginError }}</p>
 
         <div class="flex flex-row gap-2 justify-between items-center">
           <p class="text-sm text-center">
@@ -201,6 +248,12 @@ const handleBack = () => {
             </FormLabel>
           </FormItem>
         </FormField>
+
+        <div v-if="Object.keys(registerError).length > 0" class="space-y-1">
+          <p v-for="(msg, field) in registerError" :key="field" class="text-sm text-rose-400">
+            {{ field !== 'general' ? `${field}: ` : '' }}{{ msg }}
+          </p>
+        </div>
 
         <div class="flex gap-2 justify-between">
           <Button type="button" @click="handleBack" class="border-2 border-rose-400 text-white bg-transparent hover:bg-rose-400 cursor-pointer">
