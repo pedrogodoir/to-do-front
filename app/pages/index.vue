@@ -118,8 +118,11 @@ const handleBack = () => {
 </script>
 
 <template>
-  <div class="flex flex-col justify-center min-h-screen bg-slate-900 lg:bg-left gap-8">
-    <div class="flex flex-col space-y-2 p-6 h-screen items-center w-140 bg-slate-950 text-white justify-center">
+  <div class="flex max-[1000px]:flex-row items-center  flex-row-reverse justify-center min-h-screen bg-slate-900 max-[1000px]:bg-slate-950 gap-8">
+    <div class="w-full flex items-center justify-center relative max-[1000px]:hidden">
+      <img src="/backdrop.png" alt="Doom"  />
+    </div>
+    <div class="flex flex-col space-y-2 p-6 h-screen items-center w-140 bg-slate-950 text-white justify-center z-10">
       <h1 class="self-center text-xl font-semibold mb-8">
         {{ mode === "login" ? "Login" : "Register" }}
       </h1>
