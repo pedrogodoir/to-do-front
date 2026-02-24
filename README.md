@@ -1,75 +1,85 @@
-# Nuxt Minimal Starter
+# to-do-front
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Frontend of a game list application, built with **Nuxt**.
 
-## Setup
+---
 
-Make sure to install dependencies:
+## Requirements
+
+- Node.js >= 18
+- npm
+
+---
+
+## Installation
+
+#### 1. Clone the repository
 
 ```bash
-# npm
+git clone https://github.com/pedrogodoir/to-do-front.git
+cd to-do-front
+```
+
+#### 2. Install dependencies
+
+```bash
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+#### 3. Set up the environment
 
-Start the development server on `http://localhost:3000`:
+Create a `.env` file at the root of the project:
+
+```env
+NUXT_PUBLIC_API_BASE=http://localhost:8000
+```
+
+#### 4. Start the development server
 
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+The app will be available at `http://localhost:3000`.
 
-Build the application for production:
+---
 
+## Pages
+
+| Route        | Description                        |
+|--------------|------------------------------------|
+| `/`          | Login / Register                   |
+| `/dashboard` | Game board (protected by auth)     |
+
+---
+
+## Features
+
+- Authentication with JWT token stored in cookie
+- Kanban-style board with 4 columns: **To Play**, **Playing**, **Finished**, **Dropped**
+- Create games directly in any column
+- Drag & drop cards between columns to update status and delete games on trash icon
+
+---
+
+## Useful commands
+
+#### Development server
 ```bash
-# npm
+npm run dev
+```
+
+#### Production build
+```bash
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
 
-Locally preview production build:
-
+#### Preview production build
 ```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+#### Generate static site
+```bash
+npm run generate
+```
